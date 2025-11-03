@@ -15,7 +15,9 @@
             android:name=".composable.MainScreen"
             android:exported="false"
             android:label="@string/title_activity_main_screen"
-            android:theme="@style/Theme.DrumMaker" />
+            android:theme="@style/Theme.DrumMaker"
+            android:screenOrientation="fullSensor"
+            />
         <activity
             android:name=".MainActivity"
             android:exported="true"
