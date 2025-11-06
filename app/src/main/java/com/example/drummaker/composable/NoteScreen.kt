@@ -1,5 +1,6 @@
 package com.example.drummaker.composable
 
+import PlaySoundRepeatedlyButton
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -17,9 +18,17 @@ fun NoteScreen(){
         modifier = Modifier.fillMaxSize()
     ) {
         Column{
-            InnerShadowBox { Text("NOTE SCREEN TODO") }
+            InnerShadowBox {
+                Text("NOTE SCREEN TODO")
+                PlaySoundRepeatedlyButton()
+            }
             Spacer(modifier = Modifier.size(10.dp))
-            InnerShadowBox { }
+            InnerShadowBox {  }
         }
     }
+}
+
+@Composable
+fun PlaySoundButton() {
+    TODO("Not yet implemented")
 }
