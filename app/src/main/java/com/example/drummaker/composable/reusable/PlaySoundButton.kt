@@ -14,11 +14,11 @@ import kotlinx.coroutines.time.delay
 fun PlaySoundRepeatedlyButton() {
     val context = LocalContext.current
     val fileNames: MutableList<String> = mutableListOf("hihatclose1", "kick1", "snare1")
-    val soundPlayer = SoundPlayer(context, fileNames, 1000)
+    val soundPlayer = SoundPlayer(context, fileNames)
 
     val coroutineScope = rememberCoroutineScope()
-    val bpm = 240  // Przykładowe BPM
-    val delayMs = 60000L / bpm  // delay w ms
+    val bpm = 240
+    val delayMs = 60000L / bpm
 
     Button(onClick = {
         coroutineScope.launch {
@@ -42,6 +42,6 @@ fun PlaySoundRepeatedlyButton() {
             }
         }
     }) {
-        Text("Odtwórz dźwięk kilka razy z delayem")
+        Text("Odtwórz dźwięk")
     }
 }
