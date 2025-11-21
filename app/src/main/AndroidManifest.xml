@@ -10,7 +10,9 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.DrumMaker">
+        android:theme="@style/Theme.DrumMaker"
+        android:windowLayoutInDisplayCutoutMode="shortEdges"
+        >
         <activity
             android:name=".composable.MainScreen"
             android:exported="false"

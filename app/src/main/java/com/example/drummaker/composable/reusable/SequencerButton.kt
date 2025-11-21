@@ -28,7 +28,7 @@ fun SequencerButton(
         modifier = Modifier
             .clickable{ onClick() }
             .background(
-                color = if(isSelected)ElevatedBackgroundColor else clickedColor,
+                color = if(isSelected)clickedColor else ElevatedBackgroundColor,
                 shape = RoundedCornerShape(5.dp)
             )
             .border(
@@ -36,7 +36,7 @@ fun SequencerButton(
                 shape = RoundedCornerShape(5.dp),
                 color = ElevatedBorderUnselected
             )
-            .size(40.dp),
+            .size(50.dp),
         contentAlignment = Alignment.Center
     ) {
 
@@ -72,7 +72,7 @@ fun PreviewSequencerButtonRed(
 @Preview
 @Composable
 fun PreviewSequencerButtonBlue(
-    isSelected: Boolean = true,
+    isSelected: Boolean = false,
     clickedColor: Color = Blue,
     onClick: () -> Unit = { }
 ){

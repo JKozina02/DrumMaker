@@ -41,13 +41,12 @@ fun ElevatedIconButton(
                     shape = RoundedCornerShape(5.dp),
                     color = if (isSelected) ElevatedBorderSelected else ElevatedBorderUnselected
                 )
-                .size(width = if (isHalved) 40.dp else 75.dp, height = 75.dp),
+                .size(width = 75.dp , height = if (isHalved) 40.dp else 75.dp),
             contentAlignment = Alignment.Center
         ) {
             Image(
                 painter = painterResource(id = drawableId),
                 contentDescription = "MenuIcon",
-                modifier = Modifier.rotate(90f)
             )
         }
     }

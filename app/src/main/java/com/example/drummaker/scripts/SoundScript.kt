@@ -1,14 +1,13 @@
 import android.R
 import android.content.Context
 import android.net.Uri
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
 
 class SoundPlayer(private val context: Context, fileNames: List<String>) {
 
@@ -57,3 +56,47 @@ class SoundPlayer(private val context: Context, fileNames: List<String>) {
     }
 
 }
+
+class SoundManager(private val context: Context) {
+    private val allSounds = HashMap<String, String>()
+    private val selectedSounds = mutableListOf<String?>()
+
+    init {
+        for (sound in soundList) {
+            val uriString = "android.resource://${context.packageName}/raw/$sound"
+            allSounds[sound] = uriString
+        }
+    }
+
+    fun selectSound(sound: String) {
+        selectedSounds.add(sound)
+    }
+
+    fun swapSounds(index1: Int, index2: Int) {
+        if (index1 in selectedSounds.indices && index2 in selectedSounds.indices) {
+            val temp = selectedSounds[index1]
+            selectedSounds[index1] = selectedSounds[index2]
+            selectedSounds[index2] = temp
+        }
+    }
+
+    fun removeSound(index: Int) {
+        if (index in selectedSounds.indices) {
+            selectedSounds.removeAt(index)
+        }
+    }
+
+    fun addBlank() {
+        selectedSounds.add(null)
+    }
+
+    fun removeEmpty() {
+        selectedSounds.removeAll { it.isNullOrEmpty() }
+    }
+}
+
+val soundList: List<String> = listOf(
+    "hihatclose1",
+    "kick1",
+    "snare1"
+)
