@@ -9,13 +9,21 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 
-class SoundPlayer(private val context: Context, fileNames: List<String>) {
+class SoundPlayer(private val context: Context) {
 
     private var playersList: MutableList<ExoPlayer> = mutableListOf()
     private var delayMs = 60000L / 60
 
-    init {
-        for (fileName in fileNames){
+
+    fun DelaySetter(newBpm: Int){
+        this.delayMs = 60000L / newBpm
+    }
+
+    fun DelayGetter(): Long{
+        return this.delayMs
+    }
+    fun PrepareSounds(soundUriList: List<String>){
+        for (fileName in soundUriList){
             val player =  ExoPlayer.Builder(context)
                 .setHandleAudioBecomingNoisy(true)
                 .build()
@@ -26,16 +34,7 @@ class SoundPlayer(private val context: Context, fileNames: List<String>) {
             this.playersList.add(player)
         }
     }
-
-
-    fun delaySetted(newBpm: Int){
-        this.delayMs = 60000L / newBpm
-    }
-    fun delayGetter(): Long{
-        return this.delayMs
-    }
-
-    fun playSelectedSounds(indices: List<Int>) {
+    fun PlaySelectedSounds(indices: List<Int>) {
         CoroutineScope(Dispatchers.Default).launch {
             for (index in indices) {
                 if (index in playersList.indices) {
@@ -46,20 +45,19 @@ class SoundPlayer(private val context: Context, fileNames: List<String>) {
         }
     }
 
-    fun playRhythm(rhythmList: List<List<Int>>){
+    fun PlayRhythm(rhythmList: List<List<Int>>){
         CoroutineScope(Dispatchers.Default).launch {
             for (rhythm in rhythmList) {
-                playSelectedSounds(rhythm)
+                PlaySelectedSounds(rhythm)
                 delay(delayMs)
             }
         }
     }
-
 }
 
 class SoundManager(private val context: Context) {
     private val allSounds = HashMap<String, String>()
-    private val selectedSounds = mutableListOf<String?>()
+    val selectedSounds = mutableListOf<String?>()
 
     init {
         for (sound in soundList) {
@@ -67,11 +65,12 @@ class SoundManager(private val context: Context) {
             allSounds[sound] = uriString
         }
     }
-
-    fun selectSound(sound: String) {
-        selectedSounds.add(sound)
+    fun getAllSound(): HashMap<String, String> {
+        return allSounds
     }
-
+    fun addSound(sound: String) {
+        if(allSounds.containsKey(sound)) selectedSounds.add(sound)
+    }
     fun swapSounds(index1: Int, index2: Int) {
         if (index1 in selectedSounds.indices && index2 in selectedSounds.indices) {
             val temp = selectedSounds[index1]
@@ -86,7 +85,7 @@ class SoundManager(private val context: Context) {
         }
     }
 
-    fun addBlank() {
+    fun addEmpty() {
         selectedSounds.add(null)
     }
 

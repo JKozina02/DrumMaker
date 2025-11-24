@@ -1,12 +1,16 @@
 package com.example.drummaker.composable
 
 import PlaySoundRepeatedlyButton
+import SoundManager
+import SoundPlayer
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,35 +22,27 @@ import com.example.drummaker.ui.theme.Blue
 import com.example.drummaker.ui.theme.Red
 
 @Composable
-fun NoteScreen(){
+fun NoteScreen(soundManager: SoundManager) {
 
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
         Column{
-
-                InnerShadowBox(modifier = Modifier.fillMaxWidth()) {
-
-                    Text("NOTE SCREEN TODO")
-                    PlaySoundRepeatedlyButton()
-                }
+            InnerShadowBox(modifier = Modifier.fillMaxWidth()) {
+                Text("NOTE SCREEN TODO")
+            }
 
             Spacer(modifier = Modifier.size(10.dp))
+                InnerShadowBox(modifier = Modifier.fillMaxWidth().fillMaxHeight()) {
+                    Column() {
+                        for (sound in soundManager.getAllSound())
+                            Row() {
+                                Text(sound.key)
+                                SequencerButton(false, Blue) { soundManager.addSound(sound.key)}
+                                if(soundManager.selectedSounds.contains(sound.key)) Text("Zaznaczony")
+                            }
 
-                Column() {
-                    Row() {
-                        SequencerButton(false, Blue) {}
-                        SequencerButton(true, Blue) {}
-                        SequencerButton(false, Blue) {}
-                        SequencerButton(true, Blue) {}
-                        SequencerButton(false, Blue) {}
-                    }
-                    Row(){
-                        SequencerButton(true, Red) {}
-                        SequencerButton(false, Red) {}
-                        SequencerButton(true, Red) {}
-                        SequencerButton(true, Red) {}
-                        SequencerButton(true, Red) {}
+                        Spacer(Modifier.height(2.dp))
                     }
                 }
             }

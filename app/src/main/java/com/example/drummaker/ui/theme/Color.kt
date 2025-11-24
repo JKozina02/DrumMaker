@@ -13,7 +13,7 @@ val IconColor = Color(0xFF5B6F89)
 val ElevatedBackgroundColor = Color(0xFF19263B)
 val ElevatedBorderUnselected = Color(0xFF0A0D10)
 val ElevatedBorderSelected = Color(0xFF0BAAA0)
-
+val SpecialTextColor = Color(0xFF0BAAA0)
 val Red = Color(0xFFFF0000)
 val Orange = Color(0xFFFF3C00)
 val Blue = Color(0xFF0062FF)

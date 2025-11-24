@@ -11,10 +11,10 @@ import kotlinx.coroutines.time.delay
 
 
 @Composable
-fun PlaySoundRepeatedlyButton() {
+fun PlaySoundButton() {
     val context = LocalContext.current
     val fileNames: MutableList<String> = mutableListOf("hihatclose1", "kick1", "snare1")
-    val soundPlayer = SoundPlayer(context, fileNames)
+    val soundPlayer = SoundPlayer(context)
 
     val coroutineScope = rememberCoroutineScope()
     val bpm = 240
@@ -23,21 +23,56 @@ fun PlaySoundRepeatedlyButton() {
     Button(onClick = {
         coroutineScope.launch {
             repeat(4) {
-                soundPlayer.playSelectedSounds(listOf(0,1))
+                soundPlayer.PlaySelectedSounds(listOf(0,1))
                 delay(delayMs)
-                soundPlayer.playSelectedSounds(listOf(0))
+                soundPlayer.PlaySelectedSounds(listOf(0))
                 delay(delayMs)
-                soundPlayer.playSelectedSounds(listOf(0,2))
+                soundPlayer.PlaySelectedSounds(listOf(0,2))
                 delay(delayMs)
-                soundPlayer.playSelectedSounds(listOf(0))
+                soundPlayer.PlaySelectedSounds(listOf(0))
                 delay(delayMs)
-                soundPlayer.playSelectedSounds(listOf(0,1))
+                soundPlayer.PlaySelectedSounds(listOf(0,1))
                 delay(delayMs)
-                soundPlayer.playSelectedSounds(listOf(0,1))
+                soundPlayer.PlaySelectedSounds(listOf(0,1))
                 delay(delayMs)
-                soundPlayer.playSelectedSounds(listOf(0,2))
+                soundPlayer.PlaySelectedSounds(listOf(0,2))
                 delay(delayMs)
-                soundPlayer.playSelectedSounds(listOf(0))
+                soundPlayer.PlaySelectedSounds(listOf(0))
+                delay(delayMs)
+            }
+        }
+    }) {
+        Text("Odtwórz dźwięk")
+    }
+}
+@Composable
+fun PlaySoundRepeatedlyButton() {
+    val context = LocalContext.current
+    val fileNames: MutableList<String> = mutableListOf("hihatclose1", "kick1", "snare1")
+    val soundPlayer = SoundPlayer(context)
+
+    val coroutineScope = rememberCoroutineScope()
+    val bpm = 240
+    val delayMs = 60000L / bpm
+
+    Button(onClick = {
+        coroutineScope.launch {
+            repeat(4) {
+                soundPlayer.PlaySelectedSounds(listOf(0,1))
+                delay(delayMs)
+                soundPlayer.PlaySelectedSounds(listOf(0))
+                delay(delayMs)
+                soundPlayer.PlaySelectedSounds(listOf(0,2))
+                delay(delayMs)
+                soundPlayer.PlaySelectedSounds(listOf(0))
+                delay(delayMs)
+                soundPlayer.PlaySelectedSounds(listOf(0,1))
+                delay(delayMs)
+                soundPlayer.PlaySelectedSounds(listOf(0,1))
+                delay(delayMs)
+                soundPlayer.PlaySelectedSounds(listOf(0,2))
+                delay(delayMs)
+                soundPlayer.PlaySelectedSounds(listOf(0))
                 delay(delayMs)
             }
         }

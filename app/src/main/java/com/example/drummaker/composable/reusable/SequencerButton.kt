@@ -78,7 +78,9 @@ fun PreviewSequencerButtonBlue(
 ){
     Box(
         modifier = Modifier
-            .clickable{ onClick() }
+            .clickable{
+                onClick()
+            }
             .background(
                 color = if(isSelected) clickedColor else ElevatedBackgroundColor ,
                 shape = RoundedCornerShape(6.dp)
