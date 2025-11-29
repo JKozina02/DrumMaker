@@ -1,8 +1,6 @@
 package com.example.drummaker.composable
 
-import PlaySoundRepeatedlyButton
 import SoundManager
-import SoundPlayer
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,7 +17,6 @@ import androidx.compose.ui.unit.dp
 import com.example.drummaker.composable.reusable.InnerShadowBox
 import com.example.drummaker.composable.reusable.SequencerButton
 import com.example.drummaker.ui.theme.Blue
-import com.example.drummaker.ui.theme.Red
 
 @Composable
 fun NoteScreen(soundManager: SoundManager) {
@@ -48,9 +45,3 @@ fun NoteScreen(soundManager: SoundManager) {
             }
         }
     }
-
-
-@Composable
-fun PlaySoundButton() {
-    TODO("Not yet implemented")
-}

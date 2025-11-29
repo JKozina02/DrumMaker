@@ -5,55 +5,67 @@ import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 
 class SoundPlayer(private val context: Context) {
 
+    private val scope = CoroutineScope(Job() + Dispatchers.Main)
     private var playersList: MutableList<ExoPlayer> = mutableListOf()
-    private var delayMs = 60000L / 60
+    private var bpm: Int = 120
+    private var delayMs = 60000L / bpm
+    private var isPlaying = false;
 
-
-    fun DelaySetter(newBpm: Int){
+    fun delaySetter(newBpm: Int){
         this.delayMs = 60000L / newBpm
     }
-
-    fun DelayGetter(): Long{
-        return this.delayMs
+    fun delayAdd(){
+        bpm += 1
+        delaySetter(bpm)
     }
-    fun PrepareSounds(soundUriList: List<String>){
-        for (fileName in soundUriList){
+    fun delaySub(){
+        bpm -= 1
+        delaySetter(bpm)
+    }
+    fun bPMGetter(): Int{
+        return this.bpm
+    }
+    fun prepareAllSounds(soundPlayer: SoundManager){
+        this.playersList = mutableListOf()
+        val soundList = soundPlayer.getAllSound()
+        for (fileName in soundList.values){
             val player =  ExoPlayer.Builder(context)
                 .setHandleAudioBecomingNoisy(true)
                 .build()
-            val uriString = "android.resource://${context.packageName}/raw/$fileName"
-            val mediaItem = MediaItem.fromUri(Uri.parse(uriString))
+            val mediaItem = MediaItem.fromUri(Uri.parse(fileName))
             player.setMediaItem(mediaItem)
             player.prepare()
             this.playersList.add(player)
         }
     }
-    fun PlaySelectedSounds(indices: List<Int>) {
-        CoroutineScope(Dispatchers.Default).launch {
-            for (index in indices) {
-                if (index in playersList.indices) {
-                    playersList[index].play()
-                    playersList[index].seekTo(0)
-                }
+
+    fun playSoundsLoop() {
+        scope.launch {
+            if (!isPlaying) return@launch
+            for (player in playersList) {
+                player.seekTo(0)
+                player.play()
             }
+            delay(delayMs)
         }
     }
-
-    fun PlayRhythm(rhythmList: List<List<Int>>){
-        CoroutineScope(Dispatchers.Default).launch {
-            for (rhythm in rhythmList) {
-                PlaySelectedSounds(rhythm)
-                delay(delayMs)
-            }
+    fun stopPlaying(){
+        isPlaying = false
+        scope.cancel()
+        for(player in playersList) {
+            player.seekTo(0)
         }
     }
 }
+
 
 class SoundManager(private val context: Context) {
     private val allSounds = HashMap<String, String>()

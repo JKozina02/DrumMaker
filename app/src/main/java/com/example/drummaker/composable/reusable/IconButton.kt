@@ -42,3 +42,21 @@ fun PlayerIconButton(
         )
     }
 }
+
+@Composable
+fun IconButton(
+    @DrawableRes drawableId: Int,
+    onClick: () -> Unit
+){
+    Box(
+        modifier = Modifier
+            .clickable{ onClick() }
+            .size(50.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Image(
+            painter = painterResource(id = drawableId),
+            contentDescription = "MenuIcon",
+        )
+    }
+}
