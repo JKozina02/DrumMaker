@@ -4,10 +4,10 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+@Suppress("UnstableApiUsage")
 android {
     namespace = "com.example.drummaker"
     compileSdk = 36
-
     defaultConfig {
         applicationId = "com.example.drummaker"
         minSdk = 31
@@ -16,6 +16,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        externalNativeBuild {
+            cmake {
+                arguments("-DANDROID_STL=c++_shared")
+            }
+        }
     }
 
     buildTypes {
@@ -36,6 +41,13 @@ android {
     }
     buildFeatures {
         compose = true
+        prefab = true
+    }
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
     }
 }
 
