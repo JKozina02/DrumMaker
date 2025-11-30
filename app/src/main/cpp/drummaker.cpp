@@ -70,11 +70,20 @@ AudioEngine::AudioEngine(int sampleRate, int bufferSize) {
     }
 }
 
-//Test
+
 oboe::DataCallbackResult AudioEngine::onAudioReady(oboe::AudioStream *oboeStream, void *audioData, int32_t numFrames) {
+    //TODO replace test
     float *floatData = (float *) audioData;
     std::fill(floatData, floatData + numFrames, 0.0f);
     return oboe::DataCallbackResult::Continue;
+}
+
+AudioEngine::~AudioEngine() {
+    if(stream_ && isStreamValid){
+        stream_ -> requestStop();
+        stream_ -> close();
+        __android_log_print(ANDROID_LOG_INFO, "AudioEngine", "Stream closed!");
+    }
 }
 
 extern "C"
@@ -88,10 +97,16 @@ Java_com_example_drummaker_scripts_AudioEngineJNI_init(JNIEnv *env, jobject thiz
     }
     return reinterpret_cast<jlong>(engine);
 }
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_drummaker_scripts_AudioEngineJNI_destroy(JNIEnv *env, jobject thiz, jlong handle) {
-    // TODO: implement destroy()
+    AudioEngine* engine = reinterpret_cast<AudioEngine*>(handle);
+    if (engine != nullptr){
+        delete engine;
+        __android_log_print(ANDROID_LOG_INFO, "AudioEngine", "JNI: Destroy lunched!");
+    }
+    __android_log_print(ANDROID_LOG_INFO, "AudioEngine", "JNI: engine is nullptr !");
 }
 extern "C"
 JNIEXPORT jint JNICALL
