@@ -4,6 +4,8 @@
 #include <android/log.h>
 #include "oboe/Oboe.h"
 #include <cmath>
+#include <android/asset_manager_jni.h>
+#include "sndfile.h"
 
 struct Sample {
     std::vector<float> buffer;

@@ -1,3 +1,6 @@
 [submodule "app/src/main/cpp/oboe"]
 	path = app/src/main/cpp/oboe
 	url = https://github.com/google/oboe
+[submodule "app/src/main/cpp/libsndfile"]
+	path = app/src/main/cpp/libsndfile
+	url = https://github.com/libsndfile/libsndfile.git
