@@ -17,7 +17,7 @@ struct Voice {
     bool active = false;
     int sampleId = -1;
     float position = 0.0f;
-    float velocity = 0.0f;
+    float velocity = 1.0f;
 };
 
 const int NUM_STEPS = 16;
@@ -27,6 +27,7 @@ const int POLYPHONY = 16;
 class AudioEngine : public oboe::AudioStreamDataCallback {
 
 private:
+    AAssetManager* assetManager_;
     std::vector<Sample> samples_;
     std::vector<Voice> voices_;
     std::shared_ptr<oboe::AudioStream> stream_;
@@ -44,7 +45,7 @@ private:
 
 
 public:
-    AudioEngine(int sampleRate, int bufferSize);
+    AudioEngine(AAssetManager* assetManager, int sampleRate, int bufferSize);
     ~AudioEngine();
 
     int addSample(const char* path);
@@ -64,7 +65,13 @@ public:
     }
 };
 
-AudioEngine::AudioEngine(int sampleRate, int bufferSize) {
+AudioEngine::AudioEngine(AAssetManager* assetManager, int sampleRate, int bufferSize) {
+    assetManager_ = assetManager;
+    if (assetManager_ == nullptr) {
+        __android_log_print(ANDROID_LOG_ERROR, "AudioEngine", "Asset Manager is null!");
+        isStreamValid = false;
+        return;
+    }
     this->sampleRate = sampleRate;
     voices_.resize(POLYPHONY);
     setBPM(bpm_);
@@ -89,6 +96,10 @@ AudioEngine::AudioEngine(int sampleRate, int bufferSize) {
     }
 }
 
+struct AssetDataSource { AAsset* asset; };
+static sf_count_t asset_read_callback(void *ptr, sf_count_t count, void *user_data) {
+    return AAsset_read(static_cast<AssetDataSource*>(user_data)->asset, ptr, count);
+}
 
 oboe::DataCallbackResult AudioEngine::onAudioReady(oboe::AudioStream* oboeStream, void* audioData, int32_t numFrames) {
     float* outputBuffer = static_cast<float*>(audioData);
@@ -115,10 +126,10 @@ oboe::DataCallbackResult AudioEngine::onAudioReady(oboe::AudioStream* oboeStream
         for (Voice& voice : voices_) {
             if (voice.active) {
                 int readPosition = static_cast<int>(floor(voice.position));
-                outputBuffer[i] += samples_[voice.sampleId].buffer[readPosition] * voice.velocity;
-
+                if (readPosition >= 0 && readPosition < samples_[voice.sampleId].length) {
+                    outputBuffer[i] += samples_[voice.sampleId].buffer[readPosition] * voice.velocity;
+                }
                 voice.position += 1.0f;
-
                 if (voice.position >= samples_[voice.sampleId].length) {
                     voice.active = false;
                 }
@@ -135,6 +146,42 @@ AudioEngine::~AudioEngine() {
         stream_ -> close();
         __android_log_print(ANDROID_LOG_INFO, "AudioEngine", "Stream closed!");
     }
+}
+
+int AudioEngine::addSample(const char* path) {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    AAsset* asset = AAssetManager_open(assetManager_, path, AASSET_MODE_STREAMING);
+    if (!asset) {
+        __android_log_print(ANDROID_LOG_ERROR, "AudioEngine", "Nie udało się otworzyć assetu: %s", path);
+        return -1;
+    }
+
+    AssetDataSource dataSource = { .asset = asset };
+    SF_VIRTUAL_IO virtual_io;
+    virtual_io.read = asset_read_callback;
+
+    SF_INFO sfinfo;
+    SNDFILE* sndfile = sf_open_virtual(&virtual_io, SFM_READ, &sfinfo, &dataSource);
+
+    if (!sndfile) {
+        __android_log_print(ANDROID_LOG_ERROR, "AudioEngine", "Błąd otwarcia pliku WAV przez libsndfile: %s", sf_strerror(nullptr));
+        AAsset_close(asset);
+        return -1;
+    }
+
+    Sample newSample;
+    newSample.length = sfinfo.frames;
+    newSample.buffer.resize(newSample.length);
+    sf_read_float(sndfile, newSample.buffer.data(), newSample.length);
+
+    sf_close(sndfile);
+    AAsset_close(asset);
+
+    samples_.push_back(std::move(newSample));
+    int newSampleId = samples_.size() - 1;
+    __android_log_print(ANDROID_LOG_INFO, "AudioEngine", "Załadowano sampla: %s, ID: %d", path, newSampleId);
+    return newSampleId;
 }
 
 void AudioEngine::play() {
@@ -154,11 +201,8 @@ void AudioEngine::pause() {
     std::lock_guard<std::mutex> lock(mutex_);
     if(isPlaying_){
         isPlaying_ = false;
-        this->stream_->requestStop();
-        __android_log_print(ANDROID_LOG_ERROR, "AudioEngine", "Sequencer Stopped!");
-    }
-    else{
-        __android_log_print(ANDROID_LOG_ERROR, "AudioEngine", "Sequencer did not Stop!");
+        stream_->requestPause();
+        __android_log_print(ANDROID_LOG_INFO, "AudioEngine", "Sequencer Paused!");
     }
 }
 
@@ -171,7 +215,7 @@ void AudioEngine::trigger(int sampleId, float velocity) {
             voice.position = 0.0f;
             voice.velocity = velocity;
             voice.active = true;
-            break;
+            return;
         }
     }
 }
@@ -207,8 +251,9 @@ Java_com_example_drummaker_scripts_AudioEngineJNI_pause(JNIEnv *env, jobject thi
 }
 
 extern "C" JNIEXPORT jlong JNICALL
-Java_com_example_drummaker_scripts_AudioEngineJNI_init(JNIEnv *env, jobject thiz, jint sample_rate, jint buffer_size) {
-    AudioEngine* engine = new AudioEngine(sample_rate, buffer_size);
+Java_com_example_drummaker_scripts_AudioEngineJNI_init(JNIEnv *env, jobject thiz, jobject asset_manager, jint sample_rate, jint buffer_size) {
+    AAssetManager* nativeAssetManager = AAssetManager_fromJava(env, asset_manager);
+    AudioEngine* engine = new AudioEngine(nativeAssetManager, sample_rate, buffer_size);
     if (!engine->isValid()) {
         delete engine;
         return 0L;
@@ -228,18 +273,15 @@ Java_com_example_drummaker_scripts_AudioEngineJNI_destroy(JNIEnv *env, jobject t
 
 extern "C" JNIEXPORT jint JNICALL
 Java_com_example_drummaker_scripts_AudioEngineJNI_loadWav(JNIEnv *env, jobject thiz, jlong handle, jstring asset_path) {
-    // TODO: Zaimplementuj wczytywanie pliku WAV z Assets, używając AAssetManager i np. biblioteki 'libsndfile'
-    // Na razie zwracamy -1 jako błąd
-    __android_log_print(ANDROID_LOG_ERROR, "AudioEngineJNI", "loadWav is not implemented yet!");
-    return -1;
+    AudioEngine* engine = reinterpret_cast<AudioEngine*>(handle);
+    if (!engine) return -1;
+    const char* path = env->GetStringUTFChars(asset_path, nullptr);
+    int sampleId = engine->addSample(path);
+    env->ReleaseStringUTFChars(asset_path, path);
+    return sampleId;
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_drummaker_scripts_AudioEngineJNI_trigger(JNIEnv *env, jobject thiz, jlong handle,
-                                                          jint sample_id, jfloat velocity) {
-    // TODO: implement trigger()
-
-}extern "C" JNIEXPORT void JNICALL
 Java_com_example_drummaker_scripts_AudioEngineJNI_setBPM(JNIEnv *env, jobject thiz, jlong handle,
                                                          jfloat bpm) {
     AudioEngine* engine = reinterpret_cast<AudioEngine*>(handle);
