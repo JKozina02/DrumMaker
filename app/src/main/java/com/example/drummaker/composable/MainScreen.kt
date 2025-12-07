@@ -1,7 +1,5 @@
 package com.example.drummaker.composable
 
-import SoundManager
-import SoundPlayer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,9 +29,6 @@ fun MainScreen() {
     val context = LocalContext.current
     var openScreen by remember { mutableStateOf("pad") }
     var page by remember { mutableIntStateOf(1) }
-
-    val SOUND_MANAGER = remember { SoundManager(context) }
-    val SOUND_PLAYER = remember { SoundPlayer(context) }
 
     Row(
         modifier = Modifier
@@ -95,8 +90,6 @@ fun MainScreen() {
                         drawableId = R.drawable.gear,
                         onClick = { openScreen = "folder" }
                     )
-
-
                 }
             }
         }
@@ -106,8 +99,8 @@ fun MainScreen() {
             .padding(10.dp))
         {
             when(openScreen){
-                "pad" -> { PadScreen(SOUND_MANAGER,SOUND_PLAYER) }
-                "note" -> { NoteScreen(SOUND_MANAGER)}
+                "pad" -> { PadScreen() }
+                "note" -> { NoteScreen()}
                 "slider" -> { SliderScreen() }
                 "folder" -> { FolderScreen() }
                 "option" -> { OptionScreen() }
