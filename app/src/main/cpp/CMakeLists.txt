@@ -3,8 +3,6 @@ cmake_minimum_required(VERSION 3.22.1)
 project("drummaker")
 
 
-# --- Konfiguracja biblioteki Oboe ---
-# Ustawia ścieżkę do submodułu Oboe i go kompiluje.
 set(OBOE_DIR ./oboe)
 add_subdirectory(${OBOE_DIR} ./oboe/build)
 

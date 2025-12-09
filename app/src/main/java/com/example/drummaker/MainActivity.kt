@@ -12,9 +12,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
-import com.example.drummaker.composable.TestScreen
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.drummaker.composable.MainScreen
+import com.example.drummaker.scripts.DrumViewModel
 import com.example.drummaker.ui.theme.BackgroundColor
 import com.example.drummaker.ui.theme.DrumMakerTheme
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,7 +31,8 @@ class MainActivity : ComponentActivity() {
                             .background(color = BackgroundColor)
                             .windowInsetsPadding(WindowInsets.displayCutout)
                     ) {
-                        TestScreen()
+                        val drumViewModel: DrumViewModel = viewModel()
+                        MainScreen(drumViewModel)
                     }
                 }
             }

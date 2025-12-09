@@ -23,9 +23,10 @@ import com.example.drummaker.composable.reusable.ElevatedIconButton
 import com.example.drummaker.composable.reusable.InnerShadowBox
 import com.example.drummaker.ui.theme.BackgroundColor
 import com.example.drummaker.R
+import com.example.drummaker.scripts.DrumViewModel
 
 @Composable
-fun MainScreen() {
+fun MainScreen(viewModel: DrumViewModel) {
     val context = LocalContext.current
     var openScreen by remember { mutableStateOf("pad") }
     var page by remember { mutableIntStateOf(1) }

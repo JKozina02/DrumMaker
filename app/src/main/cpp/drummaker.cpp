@@ -19,7 +19,6 @@ struct Voice {
     float velocity = 1.0f;
 };
 
-// --- Stałe konfiguracyjne ---
 const int NUM_STEPS = 16;
 const int MAX_SAMPLES = 8;
 const int POLYPHONY = 16;
@@ -187,7 +186,7 @@ oboe::DataCallbackResult AudioEngine::onAudioReady(oboe::AudioStream* oboeStream
 
                 voice.position += 1.0;
                 if (voice.position >= samples_[voice.sampleId].length) {
-                    voice.active = false; // Wyłącz głos, gdy sampl się skończy
+                    voice.active = false;
                 }
             }
         }
@@ -248,9 +247,7 @@ void AudioEngine::setBPM(float bpm) {
 // --- Funkcje JNI ---
 extern "C" {
 JNIEXPORT jlong JNICALL
-Java_com_example_drummaker_scripts_AudioEngineJNI_init(JNIEnv *env, jobject thiz,
-                                                       jobject asset_manager, jint sample_rate,
-                                                       jint buffer_size) {
+Java_com_example_drummaker_scripts_AudioEngineJNI_init(JNIEnv *env, jobject thiz, jobject asset_manager, jint sample_rate, jint buffer_size) {
     AAssetManager *nativeAssetManager = AAssetManager_fromJava(env, asset_manager);
     auto *engine = new AudioEngine(nativeAssetManager, sample_rate, buffer_size);
     if (!engine->isValid()) {
@@ -261,8 +258,7 @@ Java_com_example_drummaker_scripts_AudioEngineJNI_init(JNIEnv *env, jobject thiz
 }
 
 JNIEXPORT jint JNICALL
-Java_com_example_drummaker_scripts_AudioEngineJNI_loadWav(JNIEnv *env, jobject thiz, jlong handle,
-                                                          jstring asset_path) {
+Java_com_example_drummaker_scripts_AudioEngineJNI_loadWav(JNIEnv *env, jobject thiz, jlong handle, jstring asset_path) {
     if (auto *engine = reinterpret_cast<AudioEngine *>(handle)) {
         const char *path = env->GetStringUTFChars(asset_path, nullptr);
         int result = engine->addSample(path);
@@ -276,34 +272,33 @@ JNIEXPORT void JNICALL
 Java_com_example_drummaker_scripts_AudioEngineJNI_play(JNIEnv *env, jobject thiz, jlong handle) {
     if (auto *engine = reinterpret_cast<AudioEngine *>(handle)) engine->play();
 }
+
 JNIEXPORT void JNICALL
 Java_com_example_drummaker_scripts_AudioEngineJNI_pause(JNIEnv *env, jobject thiz, jlong handle) {
     if (auto *engine = reinterpret_cast<AudioEngine *>(handle)) engine->pause();
 }
+
 JNIEXPORT void JNICALL
 Java_com_example_drummaker_scripts_AudioEngineJNI_destroy(JNIEnv *env, jobject thiz, jlong handle) {
     delete reinterpret_cast<AudioEngine *>(handle);
 }
+
 JNIEXPORT void JNICALL
-Java_com_example_drummaker_scripts_AudioEngineJNI_setBPM(JNIEnv *env, jobject thiz, jlong handle,
-                                                         jfloat bpm) {
+Java_com_example_drummaker_scripts_AudioEngineJNI_setBPM(JNIEnv *env, jobject thiz, jlong handle, jfloat bpm) {
     if (auto *engine = reinterpret_cast<AudioEngine *>(handle)) engine->setBPM(bpm);
 }
+
 JNIEXPORT void JNICALL
-Java_com_example_drummaker_scripts_AudioEngineJNI_updateGrid(JNIEnv *env, jobject thiz,
-                                                             jlong handle, jint sample_id,
-                                                             jint step, jboolean is_set) {
+Java_com_example_drummaker_scripts_AudioEngineJNI_updateGrid(JNIEnv *env, jobject thiz, jlong handle, jint sample_id, jint step, jboolean is_set) {
     if (auto *engine = reinterpret_cast<AudioEngine *>(handle))
         engine->updateGrid(sample_id, step, is_set);
 }
 
 JNIEXPORT jfloat JNICALL
-Java_com_example_drummaker_scripts_AudioEngineJNI_getBPM(JNIEnv *env, jobject thiz,
-                                                         jlong handle) { return 0.0f; }
+Java_com_example_drummaker_scripts_AudioEngineJNI_getBPM(JNIEnv *env, jobject thiz, jlong handle) { return 0.0f; }
 
 JNIEXPORT void JNICALL
-Java_com_example_drummaker_scripts_AudioEngineJNI_trigger(JNIEnv *env, jobject thiz, jlong handle,
-                                                          jint sample_id, jfloat velocity) {
+Java_com_example_drummaker_scripts_AudioEngineJNI_trigger(JNIEnv *env, jobject thiz, jlong handle, jint sample_id, jfloat velocity) {
     if (auto *engine = reinterpret_cast<AudioEngine *>(handle)) {
         engine->trigger(sample_id, velocity);
     }
