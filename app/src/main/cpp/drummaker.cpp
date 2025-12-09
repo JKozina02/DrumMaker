@@ -20,13 +20,13 @@ struct Voice {
 };
 
 const int NUM_STEPS = 16;
-const int MAX_SAMPLES = 8;
+const int MAX_SAMPLES = 6;
 const int POLYPHONY = 16;
 
 class AudioEngine : public oboe::AudioStreamDataCallback {
 private:
     AAssetManager* assetManager_;
-    std::vector<Sample> samples_;
+    std::vector<std::optional<Sample>> samples_;
     std::vector<Voice> voices_;
     std::shared_ptr<oboe::AudioStream> stream_;
     bool isStreamValid = false;
@@ -45,6 +45,7 @@ public:
     AudioEngine(AAssetManager* assetManager, int sampleRate, int bufferSize);
     ~AudioEngine();
     int addSample(const char* path);
+    void removeSample(int sampleId);
     void play();
     void pause();
     void setBPM(float bpm);
@@ -82,6 +83,7 @@ static sf_count_t mem_tell(void *user_data) { return ((MemoryDataSource *)user_d
 
 AudioEngine::AudioEngine(AAssetManager* assetManager, int sampleRate, int bufferSize) {
     assetManager_ = assetManager;
+    samples_.resize(MAX_SAMPLES);
     sampleRate_ = sampleRate;
     voices_.resize(POLYPHONY);
     setBPM(bpm_);
@@ -119,6 +121,20 @@ AudioEngine::~AudioEngine() {
 
 int AudioEngine::addSample(const char* path) {
     std::lock_guard<std::mutex> lock(mutex_);
+
+    int firstFreeSlotId = -1;
+    for (int i = 0; i < samples_.size(); i++){
+        if(!samples_[i].has_value()){
+            firstFreeSlotId = i;
+            break;
+        }
+    }
+
+    if(firstFreeSlotId == -1){
+        __android_log_print(ANDROID_LOG_ERROR, "AudioEngine", "Brak wolnego miejsca w tablicy sampli!");
+        return -1;
+    }
+
     if (!assetManager_) return -1;
 
     AAsset* asset = AAssetManager_open(assetManager_, path, AASSET_MODE_BUFFER);
@@ -161,10 +177,26 @@ int AudioEngine::addSample(const char* path) {
     sf_close(sndfile);
     AAsset_close(asset);
 
-    samples_.push_back(std::move(newSample));
-    int newSampleId = samples_.size() - 1;
-    __android_log_print(ANDROID_LOG_INFO, "AudioEngine", "Załadowano sampla: %s, ID: %d, Frames: %d", path, newSampleId, newSample.length);
-    return newSampleId;
+    samples_[firstFreeSlotId] = std::move(newSample);
+
+    __android_log_print(ANDROID_LOG_INFO, "AudioEngine", "Załadowano sampla: %s, ID: %d, Frames: %d", path, firstFreeSlotId, newSample.length);
+    return firstFreeSlotId;
+}
+
+void AudioEngine::removeSample(int sampleId) {
+    if (sampleId < 0 || sampleId >= MAX_SAMPLES){
+        return;
+    }
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    if(samples_[sampleId].has_value()){
+        samples_[sampleId].reset();
+        __android_log_print(ANDROID_LOG_INFO, "AudioEngine", "Usunięto sampla o ID: %d", sampleId);
+    }
+
+    for(int i=0; i < NUM_STEPS; i++){
+        grid_[sampleId][i] = false;
+    }
 }
 
 oboe::DataCallbackResult AudioEngine::onAudioReady(oboe::AudioStream* oboeStream, void* audioData, int32_t numFrames) {
@@ -180,12 +212,12 @@ oboe::DataCallbackResult AudioEngine::onAudioReady(oboe::AudioStream* oboeStream
         for (Voice& voice : voices_) {
             if (voice.active) {
                 int readPosition = static_cast<int>(voice.position);
-                if (readPosition < samples_[voice.sampleId].length) {
-                    mixedSample += samples_[voice.sampleId].buffer[readPosition] * voice.velocity;
+                if (samples_[voice.sampleId].has_value() && readPosition < samples_[voice.sampleId]->length) {
+                    mixedSample += samples_[voice.sampleId]->buffer[readPosition] * voice.velocity;
                 }
 
                 voice.position += 1.0;
-                if (voice.position >= samples_[voice.sampleId].length) {
+                if (!samples_[voice.sampleId].has_value() || voice.position >= samples_[voice.sampleId]->length) {
                     voice.active = false;
                 }
             }
@@ -266,6 +298,13 @@ Java_com_example_drummaker_scripts_AudioEngineJNI_loadWav(JNIEnv *env, jobject t
         return result;
     }
     return -1;
+}
+
+JNIEXPORT void JNICALL
+Java_com_example_drummaker_scripts_AudioEngineJNI_removeSample(JNIEnv *env, jobject thiz, jlong handle, jint sample_id) {
+    if (auto *engine = reinterpret_cast<AudioEngine *>(handle)) {
+        engine->removeSample(sample_id);
+    }
 }
 
 JNIEXPORT void JNICALL
