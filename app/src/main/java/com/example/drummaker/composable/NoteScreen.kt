@@ -1,6 +1,5 @@
 package com.example.drummaker.composable
 
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -20,21 +19,28 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.minus
 import com.example.drummaker.R
 import com.example.drummaker.composable.reusable.ElevatedTypeIcon
 import com.example.drummaker.composable.reusable.IconButton
 import com.example.drummaker.composable.reusable.InnerShadowBox
 import com.example.drummaker.scripts.DrumViewModel
+import com.example.drummaker.scripts.Sample
 import com.example.drummaker.ui.theme.ElevatedBackgroundColor
 import com.example.drummaker.ui.theme.ElevatedBorderUnselected
 import com.example.drummaker.ui.theme.TextColor
 
-private const val MAX_SAMPLES = 8
+private const val MAX_SAMPLES = 6
+
 @Composable
 fun NoteScreen(viewModel: DrumViewModel) {
+    val availableSamples by viewModel.availableSamples.collectAsState()
+    val loadedSamples by viewModel.loadedSamples.collectAsState()
 
     Box(
         modifier = Modifier
@@ -65,8 +71,11 @@ fun NoteScreen(viewModel: DrumViewModel) {
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        items(availableSamples) { sample ->
-                            SampleView(sample)
+                        items(availableSamples.filter { !it.isPicked }) { sample ->
+                            SampleView(
+                                sample = sample,
+                                onClick = { viewModel.addSample(sample) }
+                            )
                         }
                     }
                 }
@@ -82,7 +91,12 @@ fun NoteScreen(viewModel: DrumViewModel) {
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         items(MAX_SAMPLES) { index ->
-                            LoadedSampleSlotView(index = index + 1)
+                            val sampleInSlot = loadedSamples[index]
+                            LoadedSampleSlotView(
+                                index = index + 1,
+                                sample = sampleInSlot,
+                                onRemoveClick = { viewModel.removeSample(index) }
+                            )
                         }
                     }
                 }
@@ -92,7 +106,7 @@ fun NoteScreen(viewModel: DrumViewModel) {
 }
 
 @Composable
-fun LoadedSampleSlotView(index: Int) {
+fun LoadedSampleSlotView(index: Int, sample: Sample?, onRemoveClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -108,12 +122,26 @@ fun LoadedSampleSlotView(index: Int) {
             ),
         contentAlignment = Alignment.CenterStart
     ) {
-        Text(text = "  Slot $index", color = TextColor)
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = sample?.name ?: "Slot $index",
+                color = TextColor
+            )
+            if (sample != null) {
+                IconButton(R.drawable.xmlid_933_, size = 25, onClick = onRemoveClick)
+            }
+        }
     }
 }
 
 @Composable
-fun SampleView(sample: Sample) {
+fun SampleView(sample: Sample, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .background(
@@ -135,40 +163,9 @@ fun SampleView(sample: Sample) {
         ) {
             ElevatedTypeIcon(sample.typeImage)
             Text(sample.name, color = TextColor)
-            Box(Modifier.padding(end = 10.dp)){
-                IconButton(R.drawable.triangle, size = 25, onClick = {})
+            Box(Modifier.padding(end = 10.dp)) {
+                IconButton(R.drawable.plus, size = 25, onClick = onClick)
             }
         }
     }
 }
-
-data class Sample private constructor(
-    val name: String,
-    val type: String,
-    val url: String,
-    @DrawableRes val typeImage: Int
-) {
-    companion object {
-        operator fun invoke(name: String, type: String, url: String): Sample {
-            val imageRes = when (type) {
-                "bass" -> R.drawable.bass
-                "snare" -> R.drawable.snare
-                "cymbals" -> R.drawable.cymbals
-                else -> R.drawable.unknown
-            }
-            return Sample(name, type, url, imageRes)
-        }
-    }
-}
-
-val availableSamples: List<Sample> = listOf(
-    Sample("Kick", "bass", "kick-808.wav"),
-    Sample("Snare", "snare", "snare-808.wav"),
-    Sample("Clap", "snare", "clap-808.wav"),
-    Sample("Hi-hat", "cymbals", "hihat-808.wav"),
-    Sample("Open-hat", "cymbals", "openhat-808.wav"),
-    Sample("Tom", "snare", "tom-808.wav"),
-    Sample("Cowbell", "cowbell", "cowbell-808.wav"),
-    Sample("Crash", "cymbals", "crash-808.wav"),
-    Sample("Perc", "snare", "perc-808.wav")
-)
