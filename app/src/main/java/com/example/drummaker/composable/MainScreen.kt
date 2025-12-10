@@ -101,7 +101,7 @@ fun MainScreen(viewModel: DrumViewModel) {
         {
             when(openScreen){
                 "pad" -> { PadScreen() }
-                "note" -> { NoteScreen()}
+                "note" -> { NoteScreen(viewModel)}
                 "slider" -> { SliderScreen() }
                 "folder" -> { FolderScreen() }
                 "option" -> { OptionScreen() }

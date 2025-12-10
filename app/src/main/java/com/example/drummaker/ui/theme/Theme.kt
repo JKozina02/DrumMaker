@@ -13,20 +13,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    background = Color(0xFF333333),
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
+    onBackground = TextColor,
+    onSurface = TextColor,
+    onPrimary = TextColor,
+    onSecondary = TextColor,
+
+    background = BackgroundColor,
+    surface = ElevatedBackgroundColor,
 )
 
 @Composable
 fun DrumMakerTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    darkTheme: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val colorScheme = DarkColorScheme
+
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
