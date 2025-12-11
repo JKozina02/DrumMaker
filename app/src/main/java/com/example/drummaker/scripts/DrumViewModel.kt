@@ -50,6 +50,8 @@ private val initialAvailableSamples: List<Sample> = listOf(
 
 private const val MAX_SAMPLES = 8
 private const val NUM_STEPS = 16
+private const val INITIAL_BPM = 120
+
 
 class DrumViewModel(application: Application) : AndroidViewModel(application) {
     private var engineHandle: Long = 0L
@@ -65,6 +67,9 @@ class DrumViewModel(application: Application) : AndroidViewModel(application) {
     )
     val sequencerGrid = _sequencerGrid.asStateFlow()
 
+    private val _bpm = MutableStateFlow(INITIAL_BPM)
+    val bpm = _bpm.asStateFlow()
+
     init {
         viewModelScope.launch(Dispatchers.IO) {
             engineHandle = AudioEngineJNI.init(
@@ -74,6 +79,8 @@ class DrumViewModel(application: Application) : AndroidViewModel(application) {
             )
             if (engineHandle == 0L) {
                 Log.e("DrumViewModel", "Błąd inicjalizacji silnika audio.")
+            } else {
+                AudioEngineJNI.setBPM(engineHandle, INITIAL_BPM.toFloat())
             }
         }
     }
@@ -160,8 +167,16 @@ class DrumViewModel(application: Application) : AndroidViewModel(application) {
         if (engineHandle != 0L) AudioEngineJNI.pause(engineHandle)
     }
 
-    fun setBpm(bpm: Float) {
-        if (engineHandle != 0L) AudioEngineJNI.setBPM(engineHandle, bpm)
+    fun setBPM(newBpm: Int) {
+        if (engineHandle == 0L) return
+
+        val clampedBpm = newBpm.coerceIn(40, 300)
+
+        _bpm.value = clampedBpm
+
+        viewModelScope.launch(Dispatchers.IO) {
+            AudioEngineJNI.setBPM(engineHandle, clampedBpm.toFloat())
+        }
     }
 
     fun updateGrid(sampleId: Int, step: Int, isSet: Boolean) {
