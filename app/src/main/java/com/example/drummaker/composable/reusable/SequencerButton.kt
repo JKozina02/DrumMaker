@@ -96,28 +96,3 @@ fun PreviewSequencerButtonBlue(
 
     }
 }
-@Preview
-@Composable
-fun PreviewSequencerButtonUnclicked(
-    isSelected: Boolean = false,
-    clickedColor: Color = Blue,
-    onClick: () -> Unit = { }
-){
-    Box(
-        modifier = Modifier
-            .clickable{ onClick() }
-            .background(
-                color = if(isSelected) clickedColor else ElevatedBackgroundColor ,
-                shape = RoundedCornerShape(6.dp)
-            )
-            .border(
-                width = 1.dp,
-                shape = RoundedCornerShape(5.dp),
-                color = ElevatedBorderUnselected
-            )
-            .size(40.dp),
-        contentAlignment = Alignment.Center
-    ) {
-
-    }
-}

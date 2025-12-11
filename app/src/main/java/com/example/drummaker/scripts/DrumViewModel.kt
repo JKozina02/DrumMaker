@@ -48,6 +48,8 @@ private val initialAvailableSamples: List<Sample> = listOf(
     Sample("Perc", "snare", "perc-808.wav")
 )
 
+private const val MAX_SAMPLES = 8
+private const val NUM_STEPS = 16
 
 class DrumViewModel(application: Application) : AndroidViewModel(application) {
     private var engineHandle: Long = 0L
@@ -57,6 +59,11 @@ class DrumViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _loadedSamples = MutableStateFlow<Map<Int, Sample>>(emptyMap())
     val loadedSamples = _loadedSamples.asStateFlow()
+
+    private val _sequencerGrid = MutableStateFlow(
+        Array(MAX_SAMPLES) { BooleanArray(NUM_STEPS) { false } }
+    )
+    val sequencerGrid = _sequencerGrid.asStateFlow()
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
@@ -95,11 +102,19 @@ class DrumViewModel(application: Application) : AndroidViewModel(application) {
 
         viewModelScope.launch(Dispatchers.IO) {
             AudioEngineJNI.removeSample(engineHandle, sampleId)
+
             _loadedSamples.update { currentMap ->
                 currentMap.toMutableMap().also { it.remove(sampleId) }
             }
+
             updateAvailableSamples(sampleToRemove.url, false)
-            Log.i("DrumViewModel", "Usunięto sampel '${sampleToRemove.name}' ze slotu ID: $sampleId")
+
+            _sequencerGrid.update { currentGrid ->
+                val newGrid = currentGrid.map { it.clone() }.toTypedArray()
+                newGrid[sampleId] = BooleanArray(NUM_STEPS) { false }
+                newGrid
+            }
+            Log.i("DrumViewModel", "Usunięto sampel '${sampleToRemove.name}' ze slotu ID: $sampleId i wyczyszczono jego sekwencję.")
         }
     }
 
@@ -115,6 +130,20 @@ class DrumViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun toggleSequencerStep(sampleId: Int, step: Int) {
+        if (engineHandle == 0L) return
+
+        val newGrid = _sequencerGrid.value.map { it.clone() }.toTypedArray()
+        val currentStepState = newGrid.getOrNull(sampleId)?.getOrNull(step) ?: return
+        val newStepState = !currentStepState
+        newGrid[sampleId][step] = newStepState
+
+        _sequencerGrid.value = newGrid
+
+        viewModelScope.launch(Dispatchers.IO) {
+            AudioEngineJNI.updateGrid(engineHandle, sampleId, step, newStepState)
+        }
+    }
     override fun onCleared() {
         super.onCleared()
         if (engineHandle != 0L) {

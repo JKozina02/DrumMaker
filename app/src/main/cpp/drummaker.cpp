@@ -90,11 +90,12 @@ AudioEngine::AudioEngine(AAssetManager* assetManager, int sampleRate, int buffer
 
     oboe::AudioStreamBuilder builder;
     builder.setDirection(oboe::Direction::Output)
-            ->setPerformanceMode(oboe::PerformanceMode::None)
+            ->setPerformanceMode(oboe::PerformanceMode::LowLatency)
             ->setSharingMode(oboe::SharingMode::Exclusive)
             ->setSampleRateConversionQuality(oboe::SampleRateConversionQuality::Medium)
             ->setChannelCount(oboe::ChannelCount::Stereo)
             ->setFormat(oboe::AudioFormat::Float)
+            ->setAttributionTag("audioPlayback")
             ->setDataCallback(this);
 
     oboe::Result result = builder.openStream(stream_);
@@ -208,7 +209,21 @@ oboe::DataCallbackResult AudioEngine::onAudioReady(oboe::AudioStream* oboeStream
     std::lock_guard<std::mutex> lock(mutex_);
 
     for (int i = 0; i < numFrames; ++i) {
+
+        if (isPlaying_ && currentSample_ >= nextStepSample_) {
+
+            currentStep_ = (currentStep_ + 1) % NUM_STEPS;
+
+            for (int sampleId = 0; sampleId < MAX_SAMPLES; ++sampleId) {
+                if (grid_[sampleId][currentStep_]) {
+                    trigger(sampleId, 1.0f);
+                }
+            }
+            nextStepSample_ += samplesPerStep_;
+        }
+
         float mixedSample = 0.0f;
+
         for (Voice& voice : voices_) {
             if (voice.active) {
                 int readPosition = static_cast<int>(voice.position);
@@ -224,6 +239,10 @@ oboe::DataCallbackResult AudioEngine::onAudioReady(oboe::AudioStream* oboeStream
         }
         for (int j = 0; j < channelCount; ++j) {
             outputBuffer[i * channelCount + j] = mixedSample;
+        }
+
+        if (isPlaying_) {
+            currentSample_++;
         }
     }
 
@@ -252,7 +271,7 @@ void AudioEngine::pause() {
 }
 
 void AudioEngine::trigger(int sampleId, float velocity) {
-    if (sampleId < 0 || sampleId >= samples_.size()) return;
+    if (sampleId < 0 || sampleId >= samples_.size() || !samples_[sampleId].has_value()) return;
     for (auto& voice : voices_) {
         if (!voice.active) {
             voice.sampleId = sampleId;
@@ -273,7 +292,9 @@ void AudioEngine::updateGrid(int sampleId, int step, bool isSet) {
 void AudioEngine::setBPM(float bpm) {
     std::lock_guard<std::mutex> lock(mutex_);
     bpm_ = bpm;
-    samplesPerStep_ = (60.0 / bpm_) * sampleRate_ / 4.0;
+    if (sampleRate_ > 0) {
+        samplesPerStep_ = (60.0 / bpm_) * sampleRate_ / 4.0;
+    }
 }
 
 // --- Funkcje JNI ---
