@@ -24,7 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.minus
+import androidx.compose.ui.unit.sp
 import com.example.drummaker.R
 import com.example.drummaker.composable.reusable.ElevatedTypeIcon
 import com.example.drummaker.composable.reusable.IconButton
@@ -130,8 +130,9 @@ fun LoadedSampleSlotView(index: Int, sample: Sample?, onRemoveClick: () -> Unit)
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = sample?.name ?: "Slot $index",
-                color = TextColor
+                text = sample?.name ?: "$index",
+                color = TextColor,
+                fontSize = 26.sp
             )
             if (sample != null) {
                 IconButton(R.drawable.xmlid_933_, size = 25, onClick = onRemoveClick)
