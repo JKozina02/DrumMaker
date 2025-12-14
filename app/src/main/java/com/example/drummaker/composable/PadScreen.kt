@@ -48,7 +48,6 @@ fun PadScreen(viewModel: DrumViewModel) {
     )
     val gridState by viewModel.sequencerGrid.collectAsState()
     val loadedSamples by viewModel.loadedSamples.collectAsState()
-
     val currentBPM by viewModel.bpm.collectAsState()
     var showBpmDialog by remember { mutableStateOf(false) }
 
@@ -88,7 +87,7 @@ fun PadScreen(viewModel: DrumViewModel) {
             }
             Spacer(modifier = Modifier.size(10.dp))
             InnerShadowBox(modifier = Modifier.fillMaxSize()) {
-                val scrollState = rememberScrollState()
+                    val scrollState = rememberScrollState()
 
                 Box(
                     modifier = Modifier
@@ -129,6 +128,9 @@ fun SequencerRow(gridState: BooleanArray, onPadClick: (Int) -> Unit, litColor: C
                 clickedColor = litColor,
                 onClick = { onPadClick(stepIndex) }
             )
+            if((stepIndex + 1) % 4 == 0 && stepIndex < NUM_STEPS - 1){
+                Spacer(modifier = Modifier.size(15.dp))
+            }
         }
     }
 }

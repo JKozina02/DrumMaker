@@ -55,7 +55,6 @@ private const val INITIAL_BPM = 120
 
 class DrumViewModel(application: Application) : AndroidViewModel(application) {
     private var engineHandle: Long = 0L
-
     private val _availableSamples = MutableStateFlow(initialAvailableSamples)
     val availableSamples = _availableSamples.asStateFlow()
 
