@@ -62,8 +62,6 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.compose.google.fonts)
     implementation(libs.androidx.compose.foundation)
-    implementation(libs.androidx.media3.exoplayer)
-    implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.compose.runtime)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.foundation.layout)
