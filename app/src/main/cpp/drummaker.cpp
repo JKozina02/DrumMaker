@@ -19,7 +19,7 @@ struct Voice {
     float velocity = 1.0f;
 };
 
-const int NUM_STEPS = 16;
+const int MAX_STEPS = 64;
 const int MAX_SAMPLES = 6;
 const int POLYPHONY = 16;
 
@@ -38,8 +38,10 @@ private:
     double samplesPerStep_ = 0.0;
     double nextStepSample_ = 0.0;
     double currentSample_ = 0.0;
-    bool grid_[MAX_SAMPLES][NUM_STEPS] = {{false}};
     bool isPlaying_ = false;
+
+    int numSteps_ = 16;
+    bool grid_[MAX_SAMPLES][MAX_STEPS] = {{false}};
 
 public:
     AudioEngine(AAssetManager* assetManager, int sampleRate, int bufferSize);
@@ -53,6 +55,8 @@ public:
     void trigger(int sampleId, float velocity);
     oboe::DataCallbackResult onAudioReady(oboe::AudioStream *oboeStream, void *audioData, int32_t numFrames);
     bool isValid() const { return isStreamValid; }
+
+    void setPatternLength(int numSteps);
 };
 
 struct MemoryDataSource {
@@ -195,7 +199,7 @@ void AudioEngine::removeSample(int sampleId) {
         __android_log_print(ANDROID_LOG_INFO, "AudioEngine", "Usunięto sampla o ID: %d", sampleId);
     }
 
-    for(int i=0; i < NUM_STEPS; i++){
+    for(int i=0; i < MAX_STEPS; i++){
         grid_[sampleId][i] = false;
     }
 }
@@ -212,7 +216,10 @@ oboe::DataCallbackResult AudioEngine::onAudioReady(oboe::AudioStream* oboeStream
 
         if (isPlaying_ && currentSample_ >= nextStepSample_) {
 
-            currentStep_ = (currentStep_ + 1) % NUM_STEPS;
+            currentStep_++;
+            if (currentStep_ >= numSteps_) {
+                currentStep_ = 0;
+            }
 
             for (int sampleId = 0; sampleId < MAX_SAMPLES; ++sampleId) {
                 if (grid_[sampleId][currentStep_]) {
@@ -254,7 +261,7 @@ void AudioEngine::play() {
     if(isValid() && !isPlaying_){
         isPlaying_ = true;
         currentSample_ = 0.0;
-        currentStep_ = NUM_STEPS - 1;
+        currentStep_ = - 1;
         nextStepSample_ = 0.0;
         stream_->requestStart();
         __android_log_print(ANDROID_LOG_INFO, "AudioEngine", "Sequencer started!");
@@ -284,7 +291,7 @@ void AudioEngine::trigger(int sampleId, float velocity) {
 }
 
 void AudioEngine::updateGrid(int sampleId, int step, bool isSet) {
-    if (sampleId < 0 || sampleId >= MAX_SAMPLES || step < 0 || step >= NUM_STEPS) return;
+    if (sampleId < 0 || sampleId >= MAX_SAMPLES || step < 0 || step >= MAX_STEPS) return;
     std::lock_guard<std::mutex> lock(mutex_);
     grid_[sampleId][step] = isSet;
 }
@@ -297,8 +304,19 @@ void AudioEngine::setBPM(float bpm) {
     }
 }
 
-// --- Funkcje JNI ---
+void AudioEngine::setPatternLength(int numSteps) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (numSteps > 0 && numSteps <= MAX_STEPS) {
+        numSteps_ = numSteps;
+        if(currentStep_ >= numSteps){
+            currentStep_ = -1;
+        }
+
+    }
+}
+
 extern "C" {
+
 JNIEXPORT jlong JNICALL
 Java_com_example_drummaker_scripts_AudioEngineJNI_init(JNIEnv *env, jobject thiz, jobject asset_manager, jint sample_rate, jint buffer_size) {
     AAssetManager *nativeAssetManager = AAssetManager_fromJava(env, asset_manager);
@@ -354,13 +372,10 @@ Java_com_example_drummaker_scripts_AudioEngineJNI_updateGrid(JNIEnv *env, jobjec
         engine->updateGrid(sample_id, step, is_set);
 }
 
-JNIEXPORT jfloat JNICALL
-Java_com_example_drummaker_scripts_AudioEngineJNI_getBPM(JNIEnv *env, jobject thiz, jlong handle) { return 0.0f; }
-
 JNIEXPORT void JNICALL
-Java_com_example_drummaker_scripts_AudioEngineJNI_trigger(JNIEnv *env, jobject thiz, jlong handle, jint sample_id, jfloat velocity) {
+Java_com_example_drummaker_scripts_AudioEngineJNI_setPatternLength(JNIEnv *env, jobject thiz, jlong handle, jint num_steps) {
     if (auto *engine = reinterpret_cast<AudioEngine *>(handle)) {
-        engine->trigger(sample_id, velocity);
+        engine->setPatternLength(num_steps);
     }
 }
 }

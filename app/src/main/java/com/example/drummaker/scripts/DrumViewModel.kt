@@ -48,9 +48,13 @@ private val initialAvailableSamples: List<Sample> = listOf(
     Sample("Perc", "snare", "perc-808.wav")
 )
 
-private const val MAX_SAMPLES = 8
-private const val NUM_STEPS = 16
+private const val MAX_SAMPLES = 6
+private const val MAX_STEPS = 64
+private const val MIN_STEPS = 4
+private const val INITIAL_STEPS = 16
 private const val INITIAL_BPM = 120
+private const val MIN_BPM = 40
+private const val MAX_BPM = 260
 
 
 class DrumViewModel(application: Application) : AndroidViewModel(application) {
@@ -62,12 +66,15 @@ class DrumViewModel(application: Application) : AndroidViewModel(application) {
     val loadedSamples = _loadedSamples.asStateFlow()
 
     private val _sequencerGrid = MutableStateFlow(
-        Array(MAX_SAMPLES) { BooleanArray(NUM_STEPS) { false } }
+        Array(MAX_SAMPLES) { BooleanArray(MAX_STEPS) { false } }
     )
     val sequencerGrid = _sequencerGrid.asStateFlow()
 
     private val _bpm = MutableStateFlow(INITIAL_BPM)
     val bpm = _bpm.asStateFlow()
+
+    private val _patternLength = MutableStateFlow(INITIAL_STEPS)
+    val patternLength = _patternLength.asStateFlow()
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
@@ -80,6 +87,8 @@ class DrumViewModel(application: Application) : AndroidViewModel(application) {
                 Log.e("DrumViewModel", "Błąd inicjalizacji silnika audio.")
             } else {
                 AudioEngineJNI.setBPM(engineHandle, INITIAL_BPM.toFloat())
+                AudioEngineJNI.setPatternLength(engineHandle, INITIAL_STEPS)
+
             }
         }
     }
@@ -117,7 +126,7 @@ class DrumViewModel(application: Application) : AndroidViewModel(application) {
 
             _sequencerGrid.update { currentGrid ->
                 val newGrid = currentGrid.map { it.clone() }.toTypedArray()
-                newGrid[sampleId] = BooleanArray(NUM_STEPS) { false }
+                newGrid[sampleId] = BooleanArray(MAX_STEPS) { false }
                 newGrid
             }
             Log.i("DrumViewModel", "Usunięto sampel '${sampleToRemove.name}' ze slotu ID: $sampleId i wyczyszczono jego sekwencję.")
@@ -139,6 +148,8 @@ class DrumViewModel(application: Application) : AndroidViewModel(application) {
     fun toggleSequencerStep(sampleId: Int, step: Int) {
         if (engineHandle == 0L) return
 
+        if (step >= _patternLength.value) return
+
         val newGrid = _sequencerGrid.value.map { it.clone() }.toTypedArray()
         val currentStepState = newGrid.getOrNull(sampleId)?.getOrNull(step) ?: return
         val newStepState = !currentStepState
@@ -150,6 +161,18 @@ class DrumViewModel(application: Application) : AndroidViewModel(application) {
             AudioEngineJNI.updateGrid(engineHandle, sampleId, step, newStepState)
         }
     }
+
+    fun setPatternLength(newLength: Int) {
+        if (engineHandle == 0L) return
+
+        val clampedLength = newLength.coerceIn(MIN_STEPS, MAX_STEPS)
+        _patternLength.value = clampedLength
+
+        viewModelScope.launch(Dispatchers.IO) {
+            AudioEngineJNI.setPatternLength(engineHandle, clampedLength)
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
         if (engineHandle != 0L) {
@@ -176,9 +199,5 @@ class DrumViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             AudioEngineJNI.setBPM(engineHandle, clampedBpm.toFloat())
         }
-    }
-
-    fun updateGrid(sampleId: Int, step: Int, isSet: Boolean) {
-        if (engineHandle != 0L) AudioEngineJNI.updateGrid(engineHandle, sampleId, step, isSet)
     }
 }

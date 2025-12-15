@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -32,7 +33,6 @@ import com.example.drummaker.composable.popups.BpmInputDialog
 import com.example.drummaker.scripts.DrumViewModel
 import com.example.drummaker.ui.theme.Blue
 
-private const val NUM_STEPS = 16
 private const val MAX_SAMPLES = 6
 @Composable
 fun PadScreen(viewModel: DrumViewModel) {
@@ -50,6 +50,8 @@ fun PadScreen(viewModel: DrumViewModel) {
     val loadedSamples by viewModel.loadedSamples.collectAsState()
     val currentBPM by viewModel.bpm.collectAsState()
     var showBpmDialog by remember { mutableStateOf(false) }
+
+    val patternLength by viewModel.patternLength.collectAsState()
 
     if (showBpmDialog) {
         BpmInputDialog(
@@ -103,6 +105,7 @@ fun PadScreen(viewModel: DrumViewModel) {
                         for (sampleId in 0 until MAX_SAMPLES) {
                             if (loadedSamples.containsKey(sampleId)) {
                                 SequencerRow(
+                                    numSteps = patternLength,
                                     gridState = gridState[sampleId],
                                     litColor = trackColors.getOrElse(sampleId) { Blue }, // Pobieramy kolor z listy
                                     onPadClick = { stepIndex ->
@@ -118,18 +121,20 @@ fun PadScreen(viewModel: DrumViewModel) {
     }
 }
 @Composable
-fun SequencerRow(gridState: BooleanArray, onPadClick: (Int) -> Unit, litColor: Color) {
+fun SequencerRow(numSteps: Int, gridState: BooleanArray, onPadClick: (Int) -> Unit, litColor: Color) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        gridState.forEachIndexed { stepIndex, isSet ->
+        for (stepIndex in 0 until numSteps) {
+            val isSet = gridState.getOrElse(stepIndex) { false }
             SequencerButton(
                 isSelected = isSet,
                 clickedColor = litColor,
                 onClick = { onPadClick(stepIndex) }
             )
-            if((stepIndex + 1) % 4 == 0 && stepIndex < NUM_STEPS - 1){
-                Spacer(modifier = Modifier.size(15.dp))
+            if ((stepIndex + 1) % 4 == 0 && stepIndex < numSteps - 1) {
+                Spacer(modifier = Modifier.width(15.dp))
             }
         }
     }

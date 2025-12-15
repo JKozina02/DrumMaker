@@ -82,14 +82,14 @@ fun MainScreen(viewModel: DrumViewModel) {
                         onClick = { page = 1 }
                     )
                     ElevatedIconButton(
-                        openScreen == "option",
+                        openScreen == "folder",
                         drawableId = R.drawable.folder,
-                        onClick = { openScreen = "option" }
+                        onClick = { openScreen = "folder" }
                     )
                     ElevatedIconButton(
-                        openScreen == "folder",
+                        openScreen == "option",
                         drawableId = R.drawable.gear,
-                        onClick = { openScreen = "folder" }
+                        onClick = { openScreen = "option" }
                     )
                 }
             }
@@ -104,7 +104,7 @@ fun MainScreen(viewModel: DrumViewModel) {
                 "note" -> { NoteScreen(viewModel)}
                 "slider" -> { SliderScreen() }
                 "folder" -> { FolderScreen() }
-                "option" -> { OptionScreen() }
+                "option" -> { OptionScreen(viewModel) }
             }
         }
     }

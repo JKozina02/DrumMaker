@@ -20,3 +20,12 @@ val Yellow = Color(0xFFFFD900)
 val Purple = Color(0xFFB700FF)
 val Green = Color(0xFF0DFF00)
 val Pink = Color(0xFFFF00B2)
+
+val AvailableColors = listOf(
+    Color(0xFF0062FF),
+Color(0xff00F6FF),
+Color(0xFFFFD900),
+Color(0xFFB700FF),
+Color(0xFF0DFF00),
+Color(0xFFFF00B2),
+)
